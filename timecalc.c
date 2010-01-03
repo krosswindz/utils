@@ -133,6 +133,7 @@ get_menu_choice (void)
 static void
 get_offset (void)
 {
+	char c;
 	char neg = '\0';
 
 	werase (win_main);
@@ -144,18 +145,10 @@ get_offset (void)
 	if ((neg == 'y') || (neg == 'Y'))
 		delay = 1;
 
-	wprintw (win_main, "hour value of offset: ");
+	wprintw (win_main, "Enter offset (hh:mm:ss.mil): ");
 	wrefresh (win_main);
-	wscanw (win_main, "%d", &os_h);
-	wprintw (win_main, "minute value of offset: ");
-	wrefresh (win_main);
-	wscanw (win_main, "%d", &os_m);
-	wprintw (win_main, "second value of offset: ");
-	wrefresh (win_main);
-	wscanw (win_main, "%d", &os_s);
-	wprintw (win_main, "milli second value of offset: ");
-	wrefresh (win_main);
-	wscanw (win_main, "%d", &os_ms);
+	wscanw (win_main, "%02d:%02d:%02d%[.,]%03d", &os_h, &os_m, &os_s, &c,
+			&os_ms);
 	noecho ();
 	timecalc ();
 
@@ -165,20 +158,14 @@ get_offset (void)
 static void
 get_time (void)
 {
+	char c;
+
 	werase (win_main);
 	echo ();
-	wprintw (win_main, "hour value of time: ");
+	wprintw (win_main, "Enter time (hh:mm:ss.mil): ");
 	wrefresh (win_main);
-	wscanw (win_main, "%d", &t_h);
-	wprintw (win_main, "minute value of time: ");
-	wrefresh (win_main);
-	wscanw (win_main, "%d", &t_m);
-	wprintw (win_main, "second value of time: ");
-	wrefresh (win_main);
-	wscanw (win_main, "%d", &t_s);
-	wprintw (win_main, "milli second value of time: ");
-	wrefresh (win_main);
-	wscanw (win_main, "%d", &t_ms);
+	wscanw (win_main, "%02d:%02d:%02d%[.,]%03d", &t_h, &t_m, &t_s, &c,
+			&t_ms);
 	noecho();
 	timecalc ();
 
@@ -228,7 +215,7 @@ print_menu (int highlight)
 		mvwprintw (win_main, 4, 0, "2 - Exit calculator.\n");
 	}
 
-	mvwprintw (win_main, 6, 0, "Modified time: %02d:%02d:%02d,%03d\n",
+	mvwprintw (win_main, 6, 0, "Modified time: %02d:%02d:%02d.%03d\n",
 			mt_h, mt_m, mt_s, mt_ms);
 	wrefresh (win_main);
 	return;
