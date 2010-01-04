@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 #define VER_MAJ 0
-#define VER_MIN 1
+#define VER_MIN 2
 
 #define SEC_MINUTES 60
 #define MIN_HOURS 60
@@ -23,7 +23,6 @@ static void get_time (void);
 static void print_menu (int);
 static void timecalc (void);
 
-static volatile int delay = 0;
 static int mt_h = 0;
 static int mt_m = 0;
 static int mt_ms = 0;
@@ -36,6 +35,7 @@ static int os_h = 0;
 static int os_m = 0;
 static int os_ms = 0;
 static int os_s = 0;
+static volatile int os_neg = 0;
 static volatile int loop = 1;
 static WINDOW *win_header;
 static WINDOW *win_main;
@@ -133,22 +133,21 @@ get_menu_choice (void)
 static void
 get_offset (void)
 {
-	char c;
-	char neg = '\0';
+	char c = '\0';
 
 	werase (win_main);
 	echo ();
-	wprintw (win_main, "Is time offset negative (y/N): ");
+	wprintw (win_main, "Is offset negative (y/N): ");
 	wrefresh (win_main);
-	wscanw (win_main, "%c", &neg);
-	delay = 0;
-	if ((neg == 'y') || (neg == 'Y'))
-		delay = 1;
+	wscanw (win_main, "%c", &c);
+	if ((c == 'y') || (c == 'Y'))
+		os_neg = 1;
+	else
+		os_neg = 0;
 
 	wprintw (win_main, "Enter offset (hh:mm:ss.mil): ");
 	wrefresh (win_main);
-	wscanw (win_main, "%02d:%02d:%02d%[.,]%03d", &os_h, &os_m, &os_s, &c,
-			&os_ms);
+	wscanw (win_main, "%02d:%02d:%02d.%03d", &os_h, &os_m, &os_s, &os_ms);
 	noecho ();
 	timecalc ();
 
@@ -158,14 +157,11 @@ get_offset (void)
 static void
 get_time (void)
 {
-	char c;
-
 	werase (win_main);
 	echo ();
 	wprintw (win_main, "Enter time (hh:mm:ss.mil): ");
 	wrefresh (win_main);
-	wscanw (win_main, "%02d:%02d:%02d%[.,]%03d", &t_h, &t_m, &t_s, &c,
-			&t_ms);
+	wscanw (win_main, "%02d:%02d:%02d.%03d", &t_h, &t_m, &t_s, &t_ms);
 	noecho();
 	timecalc ();
 
@@ -182,29 +178,29 @@ print_menu (int highlight)
 	if (highlight == 0) {
 		wattron (win_main, A_REVERSE);
 		mvwprintw (win_main, 2, 0, "0 - Enter time offset (offset: ");
-		if (delay == 1)
+		if (os_neg == 1)
 			wprintw (win_main, "-");
 
-		wprintw (win_main, "%02d:%02d:%02d,%03d)\n", os_h, os_m, os_s,
+		wprintw (win_main, "%02d:%02d:%02d.%03d)\n", os_h, os_m, os_s,
 				os_ms);
 		wattroff (win_main, A_REVERSE);
 	} else {
 		mvwprintw (win_main, 2, 0, "0 - Enter time offset (offset: ");
-		if (delay == 1)
+		if (os_neg == 1)
 			wprintw (win_main, "-");
 
-		wprintw (win_main, "%02d:%02d:%02d,%03d)\n", os_h, os_m, os_s,
+		wprintw (win_main, "%02d:%02d:%02d.%03d)\n", os_h, os_m, os_s,
 				os_ms);
 	}
 
 	if (highlight == 1) {
 		wattron (win_main, A_REVERSE);
 		mvwprintw (win_main, 3, 0, "1 - Enter time (time: %02d:%02d:"
-				"%02d,%03d)\n", t_h, t_m, t_s, t_ms);
+				"%02d.%03d)\n", t_h, t_m, t_s, t_ms);
 		wattroff (win_main, A_REVERSE);
 	} else {
 		mvwprintw (win_main, 3, 0, "1 - Enter time (time: %02d:%02d:"
-				"%02d,%03d)\n", t_h, t_m, t_s, t_ms);
+				"%02d.%03d)\n", t_h, t_m, t_s, t_ms);
 	}
 
 	if (highlight == 2) {
@@ -231,14 +227,14 @@ timecalc (void)
 	os = os_ms + os_s * MSEC_SECONDS + os_m * MSEC_MINUTES
 		+ os_h * MSEC_HOURS;
 	t = t_ms + t_s * MSEC_SECONDS + t_m * MSEC_MINUTES + t_h * MSEC_HOURS;
-	if ((delay == 1) && (t < os))
+	if ((os_neg == 1) && (t < os))
 		return;
 
 	temp_h = t_h;
 	temp_m = t_m;
 	temp_s = t_s;
 	temp_ms = t_ms;
-	switch (delay) {
+	switch (os_neg) {
 		case 0:
 			mt_ms += temp_ms + os_ms;
 			if (mt_ms >= 1000) {
